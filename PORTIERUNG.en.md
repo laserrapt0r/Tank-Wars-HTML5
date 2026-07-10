@@ -186,16 +186,14 @@ baseline = row 6, descenders (g, y, p, j, q) in row 7.
 ([`js/font8x8.js`](html5-port/js/font8x8.js)): all A–Z, a–z, 0–9 as well as `: . ! % $ - ©`.
 Method — the ×2‑scaled menu texts were gray‑isolated and downsampled onto the 8×8 base;
 characters not appearing in the menu were typed into the name input field and captured there.
-This fixes the earlier bug (cross‑stroke over the "w", clipped descenders) and the
-wrong substitute glyphs. Arrows/degree signs (`↑ ← → °`) for the HUD are retained.
+Arrows/degree signs (`↑ ← → °`) for the HUD are retained.
 
 **Menu style (measured from the original):** blue background (index 11), buttons **unfilled**
 with 3D bevel (light top/left = index 15 grey, dark bottom/right = index 14), text **gray
 embossed** (1‑px shadow), title red with a red underline, corner "©1995 ML" white,
 full-screen `Frame3DThick`. Implemented in `drawMenu`/`embText`
-([`js/main.js`](html5-port/js/main.js)). **Runtime discovery:** palette index 0 in the
-original is **the background colour** (not black) — see the "Third implementation pass"
-(§10) for details.
+([`js/main.js`](html5-port/js/main.js)). In the original, palette index 0 is **the
+background colour** (not black).
 
 ---
 
@@ -253,8 +251,7 @@ step rate works out to **487 steps/s**. The **parachute descent** (`sub_7060`) i
 The port drives both processes **time‑based** (wall clock, not framerate): `stepFlight(dt)`
 runs at `FLIGHT_STEPS_PER_SEC = 487`, `stepRoundIntro(dt)` at `INTRO_PX_PER_SEC = 58`
 (each with a fractional accumulator). This makes the pace **independent of the refresh
-rate** (60/120/144 Hz play identically). Previously the simulation was coupled to `requestAnimationFrame`
-(`STEPS_PER_FRAME = 8`, 3 px/frame) → on >60‑Hz monitors everything ran too fast.
+rate** (60/120/144 Hz play identically).
 
 **Speeding up the parachute:** As in the original, **every key / every mouse click**
 during the descent skips the vsync wait time (in the original via `KeyPressed`/`MouseButtonDown` before
@@ -342,7 +339,7 @@ runs out during the game, it automatically switches to the next available one.
   crack bounding box lose `crew div 2` (except with **Quake Protection**), plus the
   shared direct blast (B=30) at the epicenter.
 - **Ping‑Pong (2) — decompiled 1:1** (sub_371d, all TP Real constants decoded). The
-  routine has **TWO loops** (I had initially overlooked the second one — corrected):
+  routine has **TWO loops**:
   - **Loop 1 (descent, 0x37ef):** initial vx,vy **÷ 3.0**; per step `pos += vel`; with
     the Reflect flag `[0xcf7]` set, bounce at **x=635→625 / x=4→14 / ceiling y=63→64**
     (sign of the matching velocity flipped); then `vy += 0.00012222` (=0.0011/9);
@@ -512,7 +509,7 @@ as in the original (code: gated via `[0xCF7]`).
   original in DOSBox** and reproduced in the port time‑based (refresh‑independent). The
   original busy‑wait is slightly cycles‑dependent; the rates are laid out as adjustment knobs in
   `game.js`.
-**Now decompiled 1:1** (previously approximated): Earthquake (sub_3511/2f9a/2c0d),
+**Decompiled 1:1:** Earthquake (sub_3511/2f9a/2c0d),
 CR‑Inducer/Julia fractal (sub_2307, production rules extracted from the code), Ping‑Pong
 (sub_371d), Caveman (sub_3bb7), terrain settling (sub_625d), terrain generation
 (sub_5e3f), **tank death animation (sub_6895)**, as well as the complete bitmap font.
@@ -524,7 +521,7 @@ sky color** (16,51,60 ≈ Sky) + a final tone sweep 900→200 Hz; then the tank 
 erased and the palette reset to the real player color. Multiple dead tanks flash
 one after another. Implemented as `stepAnim` child `'death'` (wall clock, ~0.8 s per tank).
 
-**Not yet bit/pixel exact (deliberate remaining deviations):**
+**Not bit/pixel exact (deliberate deviations):**
 - **Random seed:** the port uses the **exact Turbo Pascal 7 generator**
   (`RandSeed := RandSeed·134775813+1`, `Random(N)=(RandSeed·N) shr 32`,
   `Random`‑Real = `RandSeed/2³²`; verified in [`js/rtl.js`](html5-port/js/rtl.js)) — the
@@ -548,17 +545,15 @@ All core values (palette, physics constants, weapon algorithms & parameters,
 damage/scoring formulas, sound frequencies, AI mathematics, timing) are documented **directly from the
 machine code**; the detail specifications with address evidence are stored as
 `spec_*.md` in the analysis working directory.
-```
 
 ---
 
-## 11. Sub‑call porting status (verification log)
+## 11. Sub‑call porting status
 
 Full mapping **original routine → port location → status**. "1:1" = decompiled from the
 machine code and (Node/headless) verified; "≈" = behavior/formula documented,
 detail (pattern/layout/seed) inherently approximated; "—" = deliberately not ported.
-Checked among other things by a **loop audit** (all back‑jumps counted per routine),
-after a second loop had been overlooked in the Ping‑Pong.
+Verified among other things by a **loop audit** (all back‑jumps counted per routine).
 
 ### Physics / flight / collision
 | Original | Purpose | Port | Status |
@@ -620,19 +615,18 @@ after a second loop had been overlooked in the Ping‑Pong.
 | `sub_5a48`, `Sound/NoSound` | sweeps + effect tones | `sounds.js`, `pcspeaker.js` | 1:1 |
 | round pot/scoring | `(players−survivors)·1000/survivors`, 50 pts/man | `game.js endRoundScoring` | 1:1 |
 
-### Fall animation & event order — now 1:1
-The tank fall is now played back **visibly** as its own animation phase (pixel‑by‑pixel
+### Fall animation & event order
+The tank fall is played back **visibly** as its own animation phase (pixel‑by‑pixel
 fall with sideways slide; the tank darkens progressively as it loses crew, because
-`sub_6d3c` recomputes the crew each step and redraws the hull). **Important
-correction:** `sub_6d3c` contains **no** `Sound` instruction — the gameplay fall is
+`sub_6d3c` recomputes the crew each step and redraws the hull). `sub_6d3c` contains
+**no** `Sound` instruction — the gameplay fall is
 **silent** in the original; the driver `sub_7060` also skips the score sweep tone in settle mode
 (flag=1, @0xcb68). The 700‑Hz tone (`0x2bc`) in this code region belongs **not** to the
-fall, but to the **Caveman drill phase** (`sub_3bb7` @0x3c4c) and is already ported there 1:1.
-(The earlier assumption of a "tank‑falls‑into‑crater" routine was based on a
-mislabeling: `sub_3b7f` is merely the ±1‑x advance helper of the Caveman, and
-`GetPixel==0xD` checks **ground** — color index 13 —, not a falling tank.)
+fall, but to the **Caveman drill phase** (`sub_3bb7` @0x3c4c), ported there 1:1.
+`sub_3b7f` is the ±1‑x advance helper of the Caveman, and
+`GetPixel==0xD` checks **ground** — color index 13 —, not a falling tank.
 
-The **event order** now follows exactly the impact handler (`0xca..0xcb72`):
+The **event order** follows exactly the impact handler (`0xca..0xcb72`):
 **blast damage → death flash (per tank immediately at crew≤0, `sub_6895` @0xcafa) →
 terrain collapse (`sub_625d` @0xcb65) → fall/settle (`sub_7060`→`sub_6d3c` @0xcb72) →
 fall death flash** (`sub_6d3c` calls `sub_6895` @0x6f08/0x6fe1 for lethal falls).
@@ -649,7 +643,7 @@ max. 1 tank dying at a time). The tank order (original: array `0x1161`)
 is irrelevant to the result, since the fall does not change any terrain.
 
 ### Complete routine audit (current state)
-All **101 game‑specific routines** of the disassembly were classified (the 108
+All **101 game‑specific routines** of the disassembly are classified (the 108
 far‑calls are standard TP7 library: `Round`, `Line`, `Sound`, `OutTextXY`,
 `PutPixel`, `RandomN` … — no hidden game logic, fully covered by the port primitives
 in `vga.js`/`pcspeaker.js`/`rtl.js`). Result: **all gameplay‑relevant
@@ -657,56 +651,49 @@ routines (physics, collision, wind, weapons, terrain, collapse, fall, death, pro
 angle/power clamps, end of round, scoring, shop‑human, starting values, weapon catalog) are
 ported 1:1** — there are **no** gameplay‑relevant deviations left open.
 
-**Additionally now brought to 1:1** (previously `—`/`≈`):
-- **Fall animation & event order** (previous section).
+**Ported 1:1:**
+- **Fall animation & event order** (see above).
 - **CPU shopping** (`game.js cpuShop`): "AI stat" `[+0x1a]` decoded as `inventory[2]` (5‑kT‑Nuke count);
   all 5 brains incl. affordable list, category preferences and
-  purchase probabilities (50%/70%) rebuilt exactly.
+  purchase probabilities (50%/70%).
 - **AI aiming** (`ai.js`): all four brains (`d2c8/d61a/d17a/d48a`), the error jitter
   (`sub_0361`, arg `P+1` normal / `P/2` Jack‑PP / `3P` Jack‑without‑PP) and the error decay
-  (halved per turn rotation, not per shot) — verified against hand‑computed target values.
+  (halved per turn rotation, not per shot).
 - **AI target selection** (`ai.js`): random turn order (`[0x1161]`), persistent slot pointer
   (`[0x1774]`), target random walks per personality, line‑of‑sight test (`sub_0530`),
   height sums (`sub_071a/07c4`) and the complete 4‑way default branch
   (super‑weapon horizontal blast / LOS direct shot / reflection aim / blind lob).
 - **20‑turn‑rotation limit** (`roundOver()` via `roundCycles > 20`).
 
-### Code review (second pass) — deviations found & fixed
-An adversarial cross‑reading (port ↔ disassembly) found several subtle errors in the
-most recently ported routines, all now **fixed** and verified against the bytes:
-- **LOS test** (`sub_0530`): the end condition was `|A.y−curY|<5` (almost never true) → correctly
-  `(A.y−B.y)<5` (target not clearly below the shooter). Affected the Terminator direct shot.
-- **Jack without Ping‑Pong**: the error multiplier was `×2` → correctly **`×3`** (`0xe5b3`).
-- **`sub_d61a` weapon**: kept the current weapon → correctly weapon 2, downward scan **without** wrap (`0xd7a4`).
-- **Blind lob power**: was deterministic → correctly `min(10·crew, max(50, RandomN(min(10·crew, wall/2))))`.
-- **Berti/Klaus**: weapon cycle (random owned weapon, stop 20%/50%) was missing → added.
-- **`sub_0467` tiebreak**: `>` (first) → `>=` (last hit on a point tie).
-- **Error decay/turn limit**: were coupled to the total player count → correctly to the
-  **turn rotation** (halved/counted once per full round of living+armed tanks).
-- **Turn advance**: skipped only the dead → correctly **dead OR unarmed** (`sub_0225`, `0xd10c`).
-- **Fall slide**: `rightBlk` was tested at the already shifted X → both edges at the original X (`0x6dd4`).
-- **Fall credit**: fall victims were **not** credited to the shooter → now `+50 pts/$` per
-  fallen man (`[0x1692]` @0x7020).
-- **Hit criterion**: "reached the bottom" counted as a miss → miss only on a final
-  **X ∉ [4,635]**; an impact into a shaft detonates at the ground (`0xbf4c`).
-- **Round counter init**: `[0x1776]` starts at **1** (limit ends after 20 instead of 21 rotations).
+### AI, turn-order and fall specifics
+Exact behaviors of the AI, turn-order and fall routines, verified against the disassembly:
+- **LOS test** (`sub_0530`): end condition `(A.y−B.y)<5` (target not clearly below the shooter); used by the Terminator direct shot.
+- **Jack without Ping‑Pong**: error multiplier **`×3`** (`0xe5b3`).
+- **`sub_d61a` weapon**: weapon 2, downward scan **without** wrap (`0xd7a4`).
+- **Blind lob power**: `min(10·crew, max(50, RandomN(min(10·crew, wall/2))))`.
+- **Berti/Klaus**: weapon cycle (random owned weapon, stop 20%/50%).
+- **`sub_0467` tiebreak**: `>=` (last hit on a point tie).
+- **Error decay/turn limit**: keyed to the **turn rotation** (halved/counted once per full round of living+armed tanks).
+- **Turn advance**: skips **dead OR unarmed** tanks (`sub_0225`, `0xd10c`).
+- **Fall slide**: both edges tested at the original X (`0x6dd4`).
+- **Fall credit**: `+50 pts/$` per fallen man credited to the shooter (`[0x1692]` @0x7020).
+- **Hit criterion**: miss only on a final **X ∉ [4,635]**; an impact into a shaft detonates at the ground (`0xbf4c`).
+- **Round counter init**: `[0x1776]` starts at **1** (limit ends after 20 rotations).
 
-False alarm of the review (checked, **not** a bug): the earthquake fissure step is **not**
-X↔Y swapped — traced down to the pixel access in `sub_2c0d`: `X += Cos·0.7, Y += Sin·0.7`
-(the disassembly annotation swaps `Sin`/`Cos`, the port is correct).
+Earthquake fissure step (pixel access in `sub_2c0d`): `X += Cos·0.7, Y += Sin·0.7`; the
+disassembly annotation swaps `Sin`/`Cos`.
 
-With this all **101** game‑specific routines with game logic are ported 1:1.
+All **101** game‑specific routines with game logic are ported 1:1.
 
-The three points previously listed as "deliberate mini deviations" have now **also been
-aligned 1:1**: (a) `sub_d2c8` now chooses weapon 3 instead of 2 when the denominator ≤ 0 (`giveUp` path);
-(b) the last terrain segment on the far right is now **inclined** (one more turtle step,
-`sub_5e3f`); (c) the support tests now count **any non‑sky pixel** as footing (ground
-**or another living tank**, `tankOccupies`) — a tank can now **land on another
+Three further behaviors are 1:1: (a) `sub_d2c8` chooses weapon 3 instead of 2 when the denominator ≤ 0 (`giveUp` path);
+(b) the last terrain segment on the far right is **inclined** (one more turtle step,
+`sub_5e3f`); (c) the support tests count **any non‑sky pixel** as footing (ground
+**or another living tank**, `tankOccupies`) — a tank can **land on another
 tank** (`sub_6cbd` reads `GetPixel != 0`; the falling tank itself is excluded).
-Only cosmetic/UX aspects remain not 1:1 (below).
+Only cosmetic/UX aspects are not 1:1 (below).
 
-### Second implementation pass (completeness/cosmetic review) — added
-After the completeness/cosmetic review the following were additionally rebuilt **1:1**:
+### Additional 1:1 elements
+The following are rebuilt **1:1**:
 - **Tank decorations** (`sub_44a6`): white surrender flag + black barrel when out of ammo
   (leaning by the wind), shield bubble (ring r=12 about (X,Y-5)), quake-protection dot band
   — `tank.js`.
@@ -715,33 +702,32 @@ After the completeness/cosmetic review the following were additionally rebuilt *
 - **Per-player status via digit keys 1–0** (`sub_3d21`) and the faithful **"View Game
   Status"** (`sub_907f`: Game N of M / Attempt / Error Rate, turn order, dead struck
   through) — `main.js`.
-- **High scores "The Lucky Shots"** (`sub_96f4`) with **`localStorage` persistence**, the
-  'L' key (in-game) and a post-match display — `main.js`.
+- **High scores "The Lucky Shots"** (`sub_96f4`) with **`localStorage` persistence** and the
+  'L' key (in-game) — `main.js`.
 - **Rankings after every game** (`sub_abdc`): "Rankings after N of M Games", the encouraging
   line, scale-1 columns, 3 frames — `main.js`.
-- **Audio corrections:** round-start tones moved back to round start (chirp 400→700 + per
-  tank a rising `100+5·i` resp. `800→1500`, `sub_7060`); no fabricated end-of-round tally;
-  crater no longer booms; death boom step 2; `buyConfirm` 500→400; large-step tones
+- **Audio:** round-start tones at round start (chirp 400→700 + per
+  tank a rising `100+5·i` resp. `800→1500`, `sub_7060`); no end-of-round tally tone;
+  the crater does not boom; death boom step 2; `buyConfirm` 400; large-step tones
   (PgUp/PgDn/Home/End, W/I); flight tone gated on the flight option only.
-- **Quit default** inverted (Enter cancels, the safe option; only `y`/`j` confirms).
+- **Quit default:** Enter cancels (the safe option); only `y`/`j` confirms.
 - **Parachute geometry** exact (`sub_4291`).
 
-### Fourth pass (automated faithfulness audits) — `html5-port/tools/`
-After manual code review missed several classes of deviation, an **automated audit suite**
-was built (`tools/audit.sh`, see `tools/README.md`) that differentially checks the port
+### Automated faithfulness audits (`html5-port/tools/`)
+An **automated audit suite** (`tools/audit.sh`, see `tools/README.md`) differentially checks the port
 against the **original** (EXE image + disassembly):
-1. **`audit_strings.py`** — every EXE string vs the port + font character coverage. → found
-   missing glyphs `= @ #` (added); baseline now clean.
+1. **`audit_strings.py`** — every EXE string vs the port + font character coverage
+   (glyphs `= @ #` included); baseline clean.
 2. **`audit_input.py`** — all cursor/click-region calls (`MouseGlideTo`/`SetRange`/…) with
-   coordinates + the in-game key dispatch (DOS codes → browser key). → found missing
-   **Ins/Del = angle ±45°** (`min(180,a+45)`/`max(0,a-45)`, added).
+   coordinates + the in-game key dispatch (DOS codes → browser key), including
+   **Ins/Del = angle ±45°** (`min(180,a+45)`/`max(0,a-45)`).
 3. **`invariants.mjs`** — plays many seeded all-CPU matches headless, asserting value
-   bounds, round termination, crashes, **RNG variance** and **arsenal persistence**
-   (deterministic regression, proven to fire on the old reset bug). → 0 violations.
+   bounds, round termination, crashes, **RNG variance** and **arsenal persistence**.
+   → 0 violations.
 4. **`pixel_diff.py`** (+ `capture_dosbox.sh`) — golden-master: renders each screen headless
-   and diffs against DOSBox references (native 640×480 via nearest-neighbour). → found the
-   selected menu item's missing **white text** (`[0x177e]=6`), the status **`Error Rate 10.0 %`**
-   format (`Str(:4:1)`) + header field widths `Str(:2)`, plus shop paddings (money `:6`,
+   and diffs against DOSBox references (native 640×480 via nearest-neighbour). Covers the
+   selected menu item's **white text** (`[0x177e]=6`), the status **`Error Rate 10.0 %`**
+   format (`Str(:4:1)`) + header field widths `Str(:2)`, shop paddings (money `:6`,
    prices `:7`) and the "Buy these/For Sale" y (75).
 5. **`audit_font.py`** — the EXE's own 8×8 letter table (at 0x1067b, `A-Z [ ] _ a-z`)
    byte-for-byte against `font8x8.js`: **55/55 identical**. Digits/punctuation are not
@@ -749,65 +735,58 @@ against the **original** (EXE image + disassembly):
    via the pixel goldens.
 6. **`audit_sounds.py`** — the original's complete sound inventory (27 `Sound()` sites +
    11 sweep callers, byte-extracted with frequency formulas and delays) as 29 checks
-   against the port sources. → found & fixed: **flight whistle follows `vy/4`** (a
-   near-constant 400 Hz, NoSound ≤ −1200; previously wrongly height-based), **angle/power
-   tones 150 ms** (`sub_0a3a(30)`; previously 8 ms), **miss tone 300 ms** (`sub_0aa1(30)`),
+   against the port sources: **flight whistle follows `vy/4`** (a
+   near-constant 400 Hz, NoSound ≤ −1200), **angle/power
+   tones 150 ms** (`sub_0a3a(30)`), **miss tone 300 ms** (`sub_0aa1(30)`),
    the **death-flash ladder** (ramps in 5 ms units, 500 ms white hold, staccato descent),
-   **ring pacing** (16 ms/ring only for radius < 50). Plus WebAudio robustness: the effect
-   end is scheduled purely on the audio clock; the `setTimeout` fallback got an +80 ms
-   margin (timer/audio-clock drift used to truncate short sweeps platform-dependently —
-   Firefox Windows vs Linux).
+   **ring pacing** (16 ms/ring only for radius < 50). WebAudio robustness: the effect
+   end is scheduled purely on the audio clock; the `setTimeout` fallback has an +80 ms
+   margin (against timer/audio-clock drift — Firefox Windows vs Linux).
 
 **Mouse cursor (relative tracking):** the original moves the DOS mouse driver's cursor on
-`MouseGlideTo`/`MouseToMenuItem`; a browser cannot move the OS pointer. Absolute tracking
-made the in-game cursor JUMP to the (independent) system-pointer position on the first move
-after an auto-warp (player select etc.). Fixed: menu/names/shop AND the aiming panel now
+`MouseGlideTo`/`MouseToMenuItem`; a browser cannot move the OS pointer. Menu/names/shop and the aiming panel
 track **relative motion** (`movementX/Y`), clamped to the screen; clicks act at the
 **software-cursor** position, not the raw OS position.
 
-**"The Lucky Shots" — correct timing (`sub_bd08`):** the high-score table does **NOT** appear
-after every match (verified empirically in DOSBox) — it appears **mid-game on a qualifying
+**"The Lucky Shots" timing (`sub_bd08`):** the high-score table does **NOT** appear
+after every match — it appears **mid-game on a qualifying
 shot**: `[0x1692]=0` at shot start, `+= enemy men killed` while resolving (direct/chain/fall,
 self excluded, `0xcb0f/0xc322/0x7020`); then **score = 50·[0x1692]** (`0xcbb7`), and if it
 beats the 10th table row (`0xcbc0`) the entry (shooter name + score) is inserted and "The
 Lucky Shots" is shown **immediately over the play scene** (`0xccbe`) until a key, after which
-the turn resumes. Implemented in `afterImpact`/`recordLuckyShot`; the post-match display was
-removed (after the last game → main menu). The associated whole-program "New Match, new
+the turn resumes. Implemented in `afterImpact`/`recordLuckyShot`; it does not appear after the
+match (after the last game → main menu). The associated whole-program "New Match, new
 Luck ?" dialog (`sub_8ac5`) stays deliberately unported.
 
-**Trajectory clipping:** with reflecting walls off the shell flies past the field edges; the
-2×2 marker/trace was being drawn onto the surrounding 3-D frame. Fixed: every marker pixel
+**Trajectory clipping:** with reflecting walls off the shell flies past the field edges; every marker pixel
 is clipped to the field interior (x 4–635, y 63–475), as BGI draws inside its viewport —
 draw and erase share the same clip.
 
-**Timing root-cause analysis (disassembly):** the original uses **three pacing classes** —
+**Pacing classes (disassembly):** the original uses **three pacing classes** —
 (a) calibrated busy-waits `sub_0a3a(u)`, 1 u ≈ 5 ms by design (`37·[0x175c]−550` empty
 loops, `[0x175c]` = CalibrateSpeed/100, **re-calibrated every turn**); (b)
-`WaitVerticalRetrace` = exactly 60 Hz; (c) **none at all** (CPU-bound). Derived and
-corrected in the port: **flight = 2 u/step → 100 steps/s** (was 487) **plus free-running
+`WaitVerticalRetrace` = exactly 60 Hz; (c) **none at all** (CPU-bound). In the port:
+**flight = 2 u/step → 100 steps/s plus free-running
 above the screen edge** (y<0 without delay — the characteristic "vanishes up, rains down
 quickly" feel); **intro descent = 60 px/s** (retrace). Importantly: terrain settling
 (`sub_625d`), earthquake cracks and the post-shot fall are **unpaced** in the original —
 their DOSBox speed is an artifact of the cycles setting (20000), not a design value; the
 port picks deliberate rates for them (documented approximation).
 
-### Third implementation pass (pixel comparison against DOSBox) — added
-All main screens were compared **pixel-for-pixel** against DOSBox captures of the original
-(edge scan-lines/bounding boxes via image analysis, colours via pixel sampling). Results:
+### Pixel-exact screen layouts
+All main screens match **pixel-for-pixel** against DOSBox captures of the original
+(edge scan-lines/bounding boxes via image analysis, colours via pixel sampling):
 
-- **Central palette discovery:** in the original, **index 0 is the background colour**, not
+- **Palette index 0:** in the original, **index 0 is the background colour**, not
   black (`[0x177b]=0`; the game points `SetRGBPalette` at index 0 for sky / menu blue).
   Every "fill 0" area (status/help/quit banners `sub_907f`/`sub_8f25`/`sub_8b7f`, the
   `sub_0c31` erase-bars in rankings/shop/HUD) therefore renders as **background**. The port
   keeps index 0 = black and fills those areas with `COL.SKY` — pixel-verified: in-game bg
   srgb(65,207,255), menu bg srgb(40,81,255).
-- **Font:** added missing CP437 glyphs (`, ' ( ) [ ] \ / ; < > ? | « » * + _`) — they used
-  to render as gaps ("Well, not bad…", "[Tab]", "( …key ! )").
-- **Randomness:** `Randomize` at program start (time-based, as in TP7). Previously the LCG
-  started with a fixed seed of 0 → the first world was always identical.
+- **Font:** includes the CP437 glyphs (`, ' ( ) [ ] \ / ; < > ? | « » * + _`).
+- **Randomness:** `Randomize` at program start (time-based, as in TP7).
 - **Weapon persistence:** the arsenal is rebuilt only **once per match** (`sub_7801`,
-  20 HandGrenades); purchases persist between games. The port wrongly reset it before
-  every game → bought weapons "vanished".
+  20 HandGrenades); purchases persist between games.
 - **Rankings** (`sub_abdc`) byte-exact: rank + 45 leader dots (white), cells via bg
   erase-bar, plural-s, the closing hint as **one** string with 20 embedded spaces before
   "( ...key ! )" (offset 0xab98, length 67).
@@ -818,8 +797,8 @@ All main screens were compared **pixel-for-pixel** against DOSBox captures of th
 - **Two-tone help** (`sub_8f25`): every row is drawn **twice** — white(15) for the key
   names + `|` separators, navy(14) for the descriptions (spaces are transparent). All 8
   row strings byte-exact from the EXE (0x8cef–0x8eda).
-- **Main menu** (`sub_7801`) measured: full-screen `Frame3DThick(0,0,639,479)` (was
-  missing), title y=20 with red underline y=40 (x 205–433), boxes (40,50+40·i)-(508,85+40·i),
+- **Main menu** (`sub_7801`): full-screen `Frame3DThick(0,0,639,479)`, title y=20 with
+  red underline y=40 (x 205–433), boxes (40,50+40·i)-(508,85+40·i),
   labels x=60, values right-aligned to x2−16, **"Go for it !" set off** at (40,430)-(508,465),
   `©1995 ML` at (550,459), initial selection = "Go for it !".
 - **Option popups** (`0x7afc`/`0x7d55`/`0x7f79`/`0x813b`) 1:1: rows 6–9 open a 5-button
