@@ -1,0 +1,27 @@
+# Original game — NOT part of this project, do not redistribute
+TANK_ENG.EXE
+TANK_ENG.DOC
+TANKWARS.ICO
+
+# Reverse-engineering workbench + original-derived assets (kept private):
+# disassembly, extracted binary image, audit scripts, golden/diff screenshots
+html5-port/tools/
+
+# Local port-vs-DOSBox comparison scratch and DOSBox capture output
+_cmp/
+capture/
+image.bin
+*.disasm.txt
+
+# Editor / workspace / OS
+.claude/
+*.code-workspace
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Node / build cruft
+node_modules/
+npm-debug.log*
+*.log
