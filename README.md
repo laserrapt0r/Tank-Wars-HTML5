@@ -82,3 +82,6 @@ Original game **TankWars V2.07 © Marko Lindner (1995/96)**. This repository is 
 non‑commercial fan reimplementation for preservation and learning. **No original game files,
 binaries or disassembly are included** — only the newly written port. All trademarks and the
 original game belong to their respective owner.
+
+**This HTML5 port is published with the kind permission of Marko Lindner, the creator of the
+original game.** Thank you for allowing it to be shared.
