@@ -13,8 +13,10 @@ chain‑reaction inducers and Captain Caveman.
 
 ## Play
 
-Just open **`index.html`** in a modern browser — it is a single self‑contained file
-(all code, the font and the docs are inlined). Click once to enable sound.
+**▶ Play it online: <https://laserrapt0r.github.io/Tank-Wars-HTML5/>**
+
+Or run it locally: just open **`index.html`** in a modern browser — it is a single
+self‑contained file (all code, the font and the docs are inlined). Click once to enable sound.
 
 The modular source under `html5-port/` can also be run directly: serve the folder and open
 `html5-port/index.html` (it loads the ES modules in `html5-port/js/`).

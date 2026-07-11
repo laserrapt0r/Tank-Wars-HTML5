@@ -14,6 +14,7 @@ image.bin
 *.disasm.txt
 
 # Editor / workspace / OS
+.~lock.*#
 .claude/
 *.code-workspace
 .vscode/
