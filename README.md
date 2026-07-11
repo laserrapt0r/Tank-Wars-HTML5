@@ -38,7 +38,7 @@ The modular source under `html5-port/` can also be run directly: serve the folde
 | **Esc** | Give up this game |
 | Right click | Toggle the on‑screen aiming panel |
 | Mouse wheel | Power ± 1 |
-| Left click | Aim & fire (or operate the panel / menus) |
+| Left click | Fire with the current angle (or operate the panel / menus) |
 
 The in‑game documentation (bilingual EN/DE, switchable) is reachable from the start screen.
 

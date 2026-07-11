@@ -496,8 +496,9 @@ End power=250 · Tab next weapon · Enter fire · spacebar game status · F1 hel
 Esc surrender.
 
 **Mouse:** menu/names/shop operable by click (left click selects/changes, right click in the
-menu changes backwards). In the game: left click into the field aims the barrel at the click point and
-fires, right click only aims.
+menu changes backwards). In the game the **left click fires with the current angle** — it does
+**not** aim at the click point (the original never reads the click position, \`sub_bd08\`); the
+**right click** toggles the aiming panel (\`[0x115f]\`).
 
 **Bouncing off the edges** is tied to the option **"Reflecting Walls"** (default
 **RND** = random on/off per game; when active recognizable by the red **"R"** on the right in the
@@ -700,7 +701,7 @@ The following are rebuilt **1:1**:
   (leaning by the wind), shield bubble (ring r=12 about (X,Y-5)), quake-protection dot band
   — \`tank.js\`.
 - **Arsenal strip** (\`sub_4eae\`): a 10-weapon selector (owned only, current highlighted)
-  with **mouse weapon-select** + "No Mun no Fun !" — \`hud.js\`, \`main.js onAimClick\`.
+  with **mouse weapon-select in the aiming panel** + "No Mun no Fun !" — \`hud.js\`, \`main.js onAimClick\`.
 - **Per-player status via digit keys 1–0** (\`sub_3d21\`) and the faithful **"View Game
   Status"** (\`sub_907f\`: Game N of M / Attempt / Error Rate, turn order, dead struck
   through) — \`main.js\`.
@@ -1338,8 +1339,9 @@ Ende Power=250 · Tab nächste Waffe · Enter Feuern · Leertaste Spielstatus ·
 Esc Aufgeben.
 
 **Maus:** Menü/Namen/Shop per Klick bedienbar (Linksklick wählt/ändert, Rechtsklick im
-Menü ändert rückwärts). Im Spiel: Linksklick ins Feld richtet das Rohr zum Klickpunkt und
-feuert, Rechtsklick richtet nur.
+Menü ändert rückwärts). Im Spiel feuert der **Linksklick mit dem aktuellen Winkel** –
+er zielt **nicht** zum Klickpunkt (das Original liest die Klickposition nie, \`sub_bd08\`);
+der **Rechtsklick** schaltet das Ziel-Panel um (\`[0x115f]\`).
 
 **Abprallen an den Rändern** ist an die Option **„Reflecting Walls"** gekoppelt (Default
 **RND** = pro Spiel zufällig an/aus; aktiv erkennbar am roten **„R"** rechts in der
@@ -1546,7 +1548,7 @@ Ebenfalls 1:1 umgesetzt:
   Munitionslosigkeit (windabhängig geneigt), Schild-Blase (Ring r=12 um (X,Y-5)),
   Quake-Punktband — \`tank.js\`.
 - **Arsenal-Leiste** (\`sub_4eae\`): 10-Waffen-Auswahlstreifen (nur besessene, aktuelle
-  hervorgehoben) mit **Maus-Waffenwahl** + „No Mun no Fun !" — \`hud.js\`, \`main.js onAimClick\`.
+  hervorgehoben) mit **Maus-Waffenwahl im Ziel-Panel** + „No Mun no Fun !" — \`hud.js\`, \`main.js onAimClick\`.
 - **Spieler-Status per Zifferntaste 1–0** (\`sub_3d21\`) und die faithful **„View Game
   Status"**-Anzeige (\`sub_907f\`: Game N of M / Attempt / Error Rate, Zug-Reihenfolge, tote
   durchgestrichen) — \`main.js\`.

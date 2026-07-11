@@ -911,19 +911,21 @@ addEventListener('mousemove', (e) => {
   if (state === S.AIM && game.players[game.current] && !game.players[game.current].isComputer) {
     kbSelect = false;
     if (game.mousePanel) {
-      // panel mode: CONFINED to the HUD strip (MouseSetRange(3,3,633,52)); relative motion.
+      // panel mode: cursor visible, CONFINED to the HUD strip (MouseSetRange(3,3,633,52)).
       const r = canvas.getBoundingClientRect();
       const c = clampToPanel({
         x: cursor.x + (e.movementX || 0) / r.width * 640,
         y: cursor.y + (e.movementY || 0) / r.height * 480,
       });
       cursor.x = Math.round(c.x); cursor.y = Math.round(c.y);
+      cursor.show = true;
     } else {
-      // free-roaming cursor over the whole field (relative → unbounded under pointer lock);
-      // a click picks the shot direction and fires.
-      cursorByDelta(e);
+      // keyboard mode: the original hides the mouse cursor here (MouseCursor(0)) — moving
+      // the mouse does nothing. A left click still FIRES with the current angle and a right
+      // click toggles the panel (both handled in mousedown/onAimClick); there is no free
+      // aiming cursor, so nothing tracks the pointer.
+      cursor.show = false;
     }
-    cursor.show = true;
     redrawAim();
   }
 });
@@ -1114,22 +1116,12 @@ function onAimClick(g, rightBtn) {
     redrawAim();                          // click on empty strip: just move the cursor there
     return;
   }
-  // ---- keyboard mode ([0x115f]=0): no panel, no confined cursor ----
-  // arsenal strip: click a weapon button to select it (sub_4eae DefineClickRegion)
-  if (g.y < 60 && game._arsenal) {
-    for (const b of game._arsenal) {
-      if (g.x >= b.x1 && g.x <= b.x2 && g.y >= b.y1 && g.y <= b.y2) {
-        p.weapon = b.w; game._crKey = -1;     // weapon click: strip redraw → CR icons reroll
-        spk.play(SND.weaponCycle, game.options.soundFX); game.drawScene(); return;
-      }
-    }
-  }
-  if (g.y < 60) return;                  // ignore other clicks on the status bar
-  const dx = g.x - p.x, dy = (p.y - 5) - g.y;
-  let ang = Math.round(Math.atan2(dy, dx) * 180 / Math.PI);
-  if (ang < 0) ang = 0; if (ang > 180) ang = 180;
-  p.angle = ang;
-  game.drawScene();
+  // ---- keyboard mode ([0x115f]=0): no panel, no click regions ----
+  // The original clears every click region on entering this mode (ClearClickRegions at
+  // 0xe248), so a LEFT click simply FIRES with the CURRENT angle/power: sub_bd08 reads
+  // the stored angle field ([player+0xcd2]) and power ([player+0xcd4]) and never touches
+  // the click coordinates. It does NOT aim at the click point, and the arsenal strip is
+  // not mouse-clickable here — use the aiming panel (right-click) or Tab to pick a weapon.
   if (game.fire()) state = S.FLIGHT;
 }
 
