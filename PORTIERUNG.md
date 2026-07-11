@@ -708,6 +708,14 @@ Ebenfalls 1:1 umgesetzt:
 - **Spieler-Status per Zifferntaste 1–0** (`sub_3d21`) und die faithful **„View Game
   Status"**-Anzeige (`sub_907f`: Game N of M / Attempt / Error Rate, Zug-Reihenfolge, tote
   durchgestrichen) — `main.js`.
+- **`A`-Gag-Screen** (`sub_95a0`): bg-Banner mit Rahmen, rotem Größe-2-Titel „TankWars V2.07"
+  (212,12) und weißer Zeile „They will take control.  1995 ML" (205,40) + Marker; im Zug per
+  `A` abrufbar, mit beliebiger Taste schließbar — `main.js`.
+- **Abschieds-Screen** (`sub_116c`): Text-Modus-Schreibmaschinen-Monolog (gelb/grau/weiß auf
+  schwarz, 200-Hz-Klick je Zeichen, Spielzeit „You played …", ein von vier Kommentaren nach
+  Spielminuten, WWW/E-Mail); byte-exakte Texte, Tastendruck läuft schneller — `main.js`.
+  Abrufbar per **Esc im Hauptmenü**; kehrt danach ins Menü zurück (Browser hat kein
+  Programm-Ende).
 - **Highscores „The Lucky Shots"** (`sub_96f4`) mit **`localStorage`-Persistenz** und
   'L'-Taste (in-game) — `main.js`; erscheint bei einem wertungswürdigen Schuss,
   **nicht** nach dem Match.
@@ -832,11 +840,10 @@ Alle Haupt-Screens sind **pixelgenau** gegen DOSBox-Captures des Originals abgeg
 ### Bewusst **nicht** 1:1 (bewusst weggelassen / angenähert)
 | Bereich | Original | Port‑Stand |
 |---|---|---|
-| **Shareware-Abschieds-/Registrierungs-Screen** (`sub_116c`) | Spielzeit-Countdown + Registrierungstext beim Beenden | **weggelassen** — im Browser kein „Programm-Ende"; Inhalte stehen in dieser Doku — `—` |
+| **Abschieds-Screen** (`sub_116c`) | Schreibmaschinen-Monolog beim **Programm-Ende** | **umgesetzt**, aber per **Esc im Hauptmenü** abrufbar und danach zurück ins Menü — der Browser hat kein Programm-Ende — `≈` |
 | **INI-Persistenz** (`sub_1648`/`sub_1a2a`) | Optionen in `Tankwars.ini` speichern/laden | **weggelassen** — Optionen setzen sich pro Laden auf Defaults zurück (ließe sich per `localStorage` nachrüsten) — `—` |
 | **Kommandozeile/Usage** (`sub_1459`/`sub_15d8`) | `-D/-F/-M/-?`-Schalter, stdout-Hilfe | **weggelassen** — für den Browser gegenstandslos — `—` |
 | **Zweiter Quit-Dialog** (`sub_8ac5`, Ganzprogramm-Ende) | separater Beenden-Dialog | **weggelassen** — kein Programm-Ende im Browser — `—` |
-| In-Engine-Info-Popups (`sub_95a0`) | geboxte Textschirme | durch den HTML-Startschirm/Doku-Viewer ersetzt — `≈` |
 | **Maus-Positionierung** (`MouseGlideTo`/`MouseToMenuItem`) | verschiebt den echten Maustreiber-Cursor | **angenähert** — Browser kann den OS-Cursor nicht setzen; die Maus wird daher **per Pointer-Lock-API eingefangen** (unbegrenzte relative Bewegung; Esc/Dialoge geben frei, der nächste Klick fängt wieder ein), Warps bewegen den eingefangenen Software-Cursor. Das **Confinement** `MouseSetRange(3,3,633,52)` ist damit **1:1** — `≈` |
 | **CR-Inducer-Icons** (`sub_2b8c`, Randomize=1) | bei **jedem** Strip-Redraw über den Spiel-RNG neu gewürfeltes Gekritzel | **angenähert** — pro Zug/Waffenwahl stabil (eigener LCG), da unsere HUD auch bei Mausbewegung neu zeichnet (würde sonst flackern) und der Spiel-RNG unangetastet bleibt — `≈` |
 | **Animations-Tempi ohne Original-Taktung** (Terrain-Nachrutschen `sub_625d`, Erdbeben-Risse, Post-Schuss-Fall) | im Original **ungetaktet** (CPU-gebunden → hängt von der DOSBox-cycles-Einstellung ab) | **bewusste Rate** gewählt, da es keine feste Original-Referenz gibt — `≈` |

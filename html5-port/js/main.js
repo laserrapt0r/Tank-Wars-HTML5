@@ -38,7 +38,8 @@ addEventListener('resize', resize); resize();
 // ------------------------------------------------------------------ state ----
 const S = { MENU: 'menu', NAMES: 'names', AIM: 'aim', FLIGHT: 'flight',
   IMPACT: 'impact', ANIM: 'anim', BETWEEN: 'between', SHOP: 'shop', RANK: 'rank',
-  HELP: 'help', QUIT: 'quit', STATUS: 'status', ROUNDINTRO: 'roundintro', HISCORE: 'hiscore' };
+  HELP: 'help', QUIT: 'quit', STATUS: 'status', ROUNDINTRO: 'roundintro', HISCORE: 'hiscore',
+  INFO: 'info', FAREWELL: 'farewell' };
 let state = S.MENU;
 let prevState = S.AIM;
 
@@ -61,6 +62,8 @@ let nameSetup = null;
 
 // shop model
 let shop = null;
+let farewell = null;   // active shareware farewell screen (sub_116c), set on Esc-in-menu
+let _startMs = Date.now();   // program-start timestamp, for the farewell's "You played N…"
 
 // impact pause timer
 let impactTimer = 0;
@@ -609,6 +612,92 @@ function drawHelp() {
   for (let r = 0; r < 4; r++) vga.outText(10, 16 + r * 10, navy[r], 1, COL.BEVEL_DARK);
   vga.present();
 }
+// 'A' key gag screen (sub_95a0): a bg banner over the game, framed, with a red size-2 title
+// and a white line; a small marker sits near the "1995 ML". Dismissed by any key (like help).
+function drawInfoScreen() {
+  game.drawScene();
+  vga.bar(4, 4, 635, 54, COL.SKY);                         // Bar(4,4,635,54,0) = bg
+  frame3D(vga, 6, 6, 633, 52, false);                      // Frame3D(6,6,633,52, style 0)
+  vga.outText(212, 12, 'TankWars V2.07', 2, COL.NUKE_RED); // size 2, red(12), @ (212,12)
+  vga.outText(205, 40, '    They will take control.                  1995 ML', 1, 15);
+  vga.bar(555, 40, 556, 41, 15);                           // DrawMarker(555,40,15)
+  vga.present();
+}
+
+// ---- shareware farewell screen (sub_116c): a TEXT-MODE typewriter monologue shown on
+// "quit" (Esc in the main menu). Pure text — yellow/light-gray/white on black, a 200 Hz
+// click per character, the play-time, and one of four comments by minutes played. A browser
+// has no program exit, so it returns to the main menu when done; any key/click fast-forwards
+// the typing (as the original does). All strings are byte-exact from the EXE (0x0f32..0x114b).
+const FW = { x0: 0, y0: 12, cols: 80, cw: 8, lh: 16 };   // DOS text mode: 80 cols from x=0
+// DOS text-mode 16-colour palette (7 = light gray, 14 = yellow, 15 = white, on 0 = black).
+const TEXT_PALETTE = [
+  [0, 0, 0], [0, 0, 170], [0, 170, 0], [0, 170, 170], [170, 0, 0], [170, 0, 170], [170, 85, 0], [170, 170, 170],
+  [85, 85, 85], [85, 85, 255], [85, 255, 85], [85, 255, 255], [255, 85, 85], [255, 85, 255], [255, 255, 85], [255, 255, 255],
+];
+function buildFarewellOps(overrideSec) {
+  const totalSec = overrideSec != null ? overrideSec : Math.max(0, Math.floor((Date.now() - _startMs) / 1000));
+  const h = Math.floor(totalSec / 3600), m = Math.floor((totalSec % 3600) / 60), s = totalSec % 60;
+  const totalMin = h * 60 + m;
+  const pl = (v) => (v === 1 ? '' : 's');          // plural "s" (sub_0d23) — 1 → "", else "s"
+  const w = (v, n) => String(v).padStart(n);       // Str(v:n) — right-justified, space-padded
+  const Y = 14, G = 7, W = 15;
+  const seg = [[Y, '\n']];
+  seg.push([Y, 'You played']);
+  if (h > 0) seg.push([Y, w(h, 2) + ' hour' + pl(h) + ',']);
+  if (m > 0) seg.push([Y, w(m, 3) + ' minute' + pl(m)]);
+  if (s > 0 && (h > 0 || m > 0)) seg.push([Y, ' and']);
+  if (s > 0) seg.push([Y, w(s, 3) + ' second' + pl(s)]);
+  seg.push([Y, ' TankWars V2.07\n\r']);
+  if (totalMin <= 5) seg.push([Y, 'Not your game ?']);
+  else if (totalMin <= 59) seg.push([Y, "Nice game, isn't it ?"]);
+  else if (totalMin <= 119) seg.push([Y, 'It seems to me that you like it.']);
+  else seg.push([Y, 'Well, you could have done your homework, washed the dishes, cleaned the windows, \n\rmade your flat looking like the polished chrome of a Harley Davidson \n\r. . . and in between ' + w(Math.floor(totalMin / 3), 3) + ' times have pleased your wife (husband ?) !\n\r\n\rBut boy, you chose the right thing.']);
+  seg.push([G, '\n\r\n\rVisit TankWars on WWW  : ']);
+  seg.push([W, 'http://www.tu-chemnitz.de/~mali/tankwars/download.htm']);
+  seg.push([G, '\n\rOr send me some e-mail : ']);
+  seg.push([W, 'marko.lindner@hrz.tu-chemnitz.de']);
+  const ops = [];
+  for (const [c, t] of seg) for (const ch of t) ops.push([c, ch]);
+  return ops;
+}
+function fwPaint(f, color, ch) {                   // advance the text cursor, drawing printables
+  if (ch === '\n') { f.row++; f.col = 0; }
+  else if (ch === '\r') { f.col = 0; }
+  else {
+    vga.outText(FW.x0 + f.col * FW.cw, FW.y0 + f.row * FW.lh, ch, 1, color);
+    if (++f.col >= FW.cols) { f.col = 0; f.row++; }
+    return true;                                   // printable → caller clicks
+  }
+  return false;
+}
+function beginFarewell() {
+  vga.setPalette(TEXT_PALETTE.map(c => c.slice()));
+  vga.clear(0);
+  if (pointerLocked) { try { document.exitPointerLock(); } catch (e) {} }
+  farewell = { ops: buildFarewellOps(), i: 0, acc: 0, col: 0, row: 0, skip: false, endAcc: 0, caret: null };
+  state = S.FAREWELL;
+  vga.present();
+}
+function stepFarewell(dt) {
+  const f = farewell; if (!f) return;
+  if (f.caret) { vga.bar(f.caret.x, f.caret.y, f.caret.x + 7, f.caret.y + 13, 0); f.caret = null; }
+  f.acc += dt;
+  while (f.i < f.ops.length) {
+    const [color, ch] = f.ops[f.i];
+    const cost = (ch === '\n' || ch === '\r') ? 10 : (f.skip ? 5 : 61);   // per-char typewriter timing
+    if (f.acc < cost) break;
+    f.acc -= cost; f.i++;
+    if (fwPaint(f, color, ch)) spk.play(SND.introClick, game.options.soundFX);  // 200 Hz click
+  }
+  if (f.i < f.ops.length) {                        // block caret at the next cell
+    const x = FW.x0 + f.col * FW.cw, y = FW.y0 + f.row * FW.lh;
+    vga.bar(x, y, x + 7, y + 13, 15); f.caret = { x, y };
+  } else if ((f.endAcc += dt) >= 1000) {           // done → 1 s pause → main menu (no OS exit)
+    farewell = null; state = S.MENU; drawMenu(); return;
+  }
+  vga.present();
+}
 function drawQuit() {
   // sub_8b7f: black banner, question in a small raised box (embossed), two buttons; the
   // SAFE option is default (Enter cancels), only an explicit yes confirms.
@@ -886,7 +975,8 @@ addEventListener('mousedown', (e) => {
     onAimClick(g, rightBtn);
   } else if (state === S.RANK) { advanceAfterRankings(); }
   else if (state === S.HISCORE) { leaveHighScores(); }
-  else if (state === S.HELP || state === S.STATUS) { state = prevState; game.drawScene(); }
+  else if (state === S.HELP || state === S.STATUS || state === S.INFO) { state = prevState; game.drawScene(); }
+  else if (state === S.FAREWELL && farewell) { farewell.skip = true; }
   else if (state === S.QUIT) { state = S.AIM; finishRound(); }
 });
 addEventListener('contextmenu', (e) => { if (overlay.style.display === 'none') e.preventDefault(); });
@@ -1051,7 +1141,8 @@ addEventListener('keydown', (e) => {
   if (state === S.SHOP) return onShopKey(e);
   if (state === S.RANK) { e.preventDefault(); advanceAfterRankings(); return; }
   if (state === S.HISCORE) { e.preventDefault(); leaveHighScores(); return; }
-  if (state === S.HELP || state === S.STATUS) { e.preventDefault(); state = prevState; game.drawScene(); return; }
+  if (state === S.HELP || state === S.STATUS || state === S.INFO) { e.preventDefault(); state = prevState; game.drawScene(); return; }
+  if (state === S.FAREWELL) { e.preventDefault(); if (farewell) farewell.skip = true; return; }
   if (state === S.QUIT) return onQuitKey(e);
   if (state === S.AIM) return onAimKey(e);
   // ignore keys during flight/impact
@@ -1085,6 +1176,7 @@ function onMenuKey(e) {
       if (POPUP_DEFS[MENU_ITEMS[menuSel].key]) { popup = { def: POPUP_DEFS[MENU_ITEMS[menuSel].key], sel: 4 }; break; }
       changeMenuValue(1);
       break;
+    case 'Escape': beginFarewell(); return;   // "quit" (menu Esc → sub_116c farewell → back to menu)
   }
   drawMenu();
 }
@@ -1145,6 +1237,7 @@ function onAimKey(e) {
     case 'Enter':      if (game.fire()) { state = S.FLIGHT; } handled = true; break;
     case ' ':          prevState = S.AIM; state = S.STATUS; drawStatus(); return;
     case 'l': case 'L': beginHighScores('peek'); return;   // in-game "Lucky Shots" peek (0xdebd)
+    case 'a': case 'A': prevState = S.AIM; state = S.INFO; drawInfoScreen(); return;   // gag screen (sub_95a0)
     case '1': case '2': case '3': case '4': case '5':
     case '6': case '7': case '8': case '9': case '0': {    // 1..0 = peek at player N's status (sub_3d21)
       const d = e.key === '0' ? 10 : (e.key.charCodeAt(0) - 48);
@@ -1239,6 +1332,8 @@ function loop(ts) {
       // step the post-impact phase queue (dig → blast-death → collapse → fall → fall-death);
       // returns true only when the WHOLE queue is drained.
       if (game.stepAnim(dt)) afterImpact(game.finishAnim());
+    } else if (state === S.FAREWELL) {
+      stepFarewell(dt);                 // typewriter monologue on "quit"
     }
   } catch (err) {
     console.error('game loop error:', err);
@@ -1502,6 +1597,21 @@ overlay.addEventListener('click', () => {
       game.players.forEach(p => { p.chute = false; if (p.restY) p.y = p.restY; });
       state = S.AIM; prevState = S.AIM;
       drawHelp();
+    }
+    else if (shot === 'info') {
+      game.setupPlayers([{ name: 'Tommy', isComputer: false }, { name: 'Ballisto', isComputer: true }]);
+      game.startRound();
+      game.players.forEach(p => { p.chute = false; if (p.restY) p.y = p.restY; });
+      state = S.INFO; prevState = S.AIM;
+      drawInfoScreen();
+    }
+    else if (shot === 'farewell') {          // full render (no animation) for inspection; ?min=N
+      vga.setPalette(TEXT_PALETTE.map(c => c.slice())); vga.clear(0);
+      const mn = params.get('min');
+      const f = { col: 0, row: 0 };
+      for (const [color, ch] of buildFarewellOps(mn != null ? parseInt(mn, 10) * 60 + 30 : undefined)) fwPaint(f, color, ch);
+      farewell = null; state = S.FAREWELL;   // FAREWELL + farewell=null → loop won't overwrite
+      vga.present();
     }
     else if (shot === 'panel') {
       game.setupPlayers([{ name: 'Tommy', isComputer: false }, { name: 'Ballisto', isComputer: true }]);
