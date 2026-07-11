@@ -1421,6 +1421,8 @@ function startApp() {
   state = S.MENU;
   kbSelect = true;                 // show the software cursor on the current selection
   drawMenu();
+  maybeLock();                     // capture the mouse right away — the start click is a
+                                   // valid user gesture, so no second click is needed
   requestAnimationFrame(loop);
 }
 overlay.addEventListener('click', () => {
