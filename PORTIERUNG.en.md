@@ -534,9 +534,10 @@ one after another. Implemented as `stepAnim` child `'death'` (wall clock, ~0.8 s
   win counter; sorting by wins/points); **layout** is rebuilt from screenshots/specs,
   not verified field by field against the code (purely cosmetic interstitial
   screens).
-- **Mouse control/menu glide:** the original uses a click‑region/`MouseGlideTo` framework;
-  the port is keyboard‑focused (with a rebuilt cursor jump on selection, see name
-  screen). Functionally equivalent, but not the same internal framework.
+- **Mouse control/menu glide:** the original uses the DOS mouse driver's click‑region/
+  `MouseGlideTo` framework; the port reproduces this functionally (cursor, click regions,
+  aiming panel, selection glide) — via Pointer Lock instead of the driver, so equivalent
+  but not the same internal framework.
 - **Menu/shop blip sounds:** core frequencies verified against the code (menu move/names/shop
   = **400 Hz** `[0x190]`, weapon change **300**, effect tones 500/700/1000); individual
   detail blips are style‑matched recipes.
@@ -743,10 +744,14 @@ against the **original** (EXE image + disassembly):
    end is scheduled purely on the audio clock; the `setTimeout` fallback has an +80 ms
    margin (against timer/audio-clock drift — Firefox Windows vs Linux).
 
-**Mouse cursor (relative tracking):** the original moves the DOS mouse driver's cursor on
-`MouseGlideTo`/`MouseToMenuItem`; a browser cannot move the OS pointer. Menu/names/shop and the aiming panel
-track **relative motion** (`movementX/Y`), clamped to the screen; clicks act at the
-**software-cursor** position, not the raw OS position.
+**Mouse cursor (Pointer Lock):** the original moves the DOS mouse driver's cursor on
+`MouseGlideTo`/`MouseToMenuItem`; a browser cannot move the OS pointer. On the mouse-driven
+screens (menu/names/shop and the aim turn) the mouse is therefore **captured via the Pointer
+Lock API** and the software cursor is driven by **relative motion** (`movementX/Y`) — so the
+motion is **unbounded** (the real OS pointer can never hit a screen edge and freeze the
+in-game cursor). A click captures the pointer, **Esc/Tab/tab-switch** release it, the next
+click re-captures. Clicks act at the **software-cursor** position; in the aiming panel the
+cursor stays confined to the HUD strip (`MouseSetRange(3,3,633,52)`).
 
 **"The Lucky Shots" timing (`sub_bd08`):** the high-score table does **NOT** appear
 after every match — it appears **mid-game on a qualifying
@@ -823,4 +828,6 @@ All main screens match **pixel-for-pixel** against DOSBox captures of the origin
 | **Command line/usage** (`sub_1459`/`sub_15d8`) | `-D/-F/-M/-?` switches, stdout help | **omitted** — meaningless for a browser build — `—` |
 | **Second quit dialog** (`sub_8ac5`, whole-program exit) | separate exit dialog | **omitted** — no program exit in a browser — `—` |
 | in-engine info popups (`sub_95a0`) | boxed text screens | replaced by the HTML start screen / doc viewer — `≈` |
-| mouse confinement (`MouseSetRange(3,3,633,52)`) | cursor locked into the HUD strip during the aim turn | **omitted** — intrusive in a browser; all panel clicks are 1:1 — `≈` |
+| **Mouse positioning** (`MouseGlideTo`/`MouseToMenuItem`) | moves the real mouse-driver cursor | **approximated** — a browser cannot set the OS pointer, so the mouse is **captured via the Pointer Lock API** (unbounded relative motion; Esc/dialogs release it, the next click re-captures) and warps move the captured software cursor. The **confinement** `MouseSetRange(3,3,633,52)` is thereby **1:1** — `≈` |
+| **CR-Inducer icons** (`sub_2b8c`, Randomize=1) | re-scribbled from the game RNG on **every** strip redraw | **approximated** — stable per turn/weapon-select (own LCG), since the HUD also redraws on mouse-move (would otherwise flicker) and the game RNG stays untouched — `≈` |
+| **Animation speeds with no original pacing** (terrain settling `sub_625d`, earthquake cracks, post-shot fall) | **unpaced** in the original (CPU-bound → depends on the DOSBox cycles setting) | a **deliberate rate** is chosen, as there is no fixed original reference — `≈` |

@@ -536,9 +536,10 @@ nacheinander. Umgesetzt als `stepAnim`‑Kind `'death'` (wall‑clock, ~0,8 s je
   Sieg‑Zähler; Sortierung nach Wins/Punkten); **Layout** ist aus Screenshots/Specs
   nachgebaut, nicht Feld‑für‑Feld gegen den Code verifiziert (rein kosmetische
   Zwischenbild‑Screens).
-- **Maus‑Steuerung/Menü‑Glide:** Das Original nutzt ein Klick‑Region‑/`MouseGlideTo`‑Framework;
-  der Port ist Tastatur‑fokussiert (mit nachgebautem Cursor‑Sprung bei Auswahl, s. Namens‑
-  Screen). Funktional gleichwertig, aber nicht dasselbe interne Framework.
+- **Maus‑Steuerung/Menü‑Glide:** Das Original nutzt ein Klick‑Region‑/`MouseGlideTo`‑Framework
+  des DOS‑Maustreibers; der Port bildet dies funktional nach (Cursor, Klick‑Regionen,
+  Ziel‑Panel, Auswahl‑Glide) — via Pointer‑Lock statt Maustreiber, also gleichwertig, aber
+  nicht dasselbe interne Framework.
 - **Menü/Shop‑Blip‑Sounds:** Kern‑Frequenzen gegen den Code verifiziert (Menü‑Move/Namen/Shop
   = **400 Hz** `[0x190]`, Waffenwechsel **300**, Effekt‑Töne 500/700/1000); einzelne
   Detail‑Blips sind stilgleiche Rezepte.
@@ -749,11 +750,15 @@ den Port differenziell gegen das **Original** (EXE-Image + Disassembly):
    audio-clock-geplant; der `setTimeout`-Fallback hat +80 ms Marge gegen
    Timer/Audio-Clock-Drift auf verschiedenen Plattformen.
 
-**Maus-Cursor (relatives Tracking):** Das Original verschiebt bei `MouseGlideTo`/
-`MouseToMenuItem` den echten Maustreiber-Cursor mit; im Browser ist das unmöglich.
-Menü/Names/Shop **und**
-das Ziel-Panel tracken daher **relative Bewegung** (`movementX/Y`), auf den Bildschirm
-geklemmt; Klicks wirken an der **Software-Cursor-Position**, nicht an der rohen OS-Position.
+**Maus-Cursor (Pointer Lock):** Das Original verschiebt bei `MouseGlideTo`/`MouseToMenuItem`
+den echten Maustreiber-Cursor mit; im Browser ist das unmöglich. Auf den mausgesteuerten
+Screens (Menü/Names/Shop und der Ziel-Zug) wird die Maus deshalb per **Pointer-Lock-API
+eingefangen** und der Software-Cursor über die **relative Bewegung** (`movementX/Y`) geführt —
+so ist die Bewegung **unbegrenzt** (der echte OS-Cursor kann an keinen Bildschirmrand stoßen
+und den Ingame-Cursor einfrieren). Ein Klick fängt den Pointer ein, **Esc/Tab/Tab-Wechsel**
+geben ihn frei, der nächste Klick fängt ihn wieder ein. Klicks wirken an der
+**Software-Cursor-Position**; im Ziel-Panel bleibt der Cursor auf den HUD-Streifen geklemmt
+(`MouseSetRange(3,3,633,52)`).
 
 **„The Lucky Shots" — Timing (`sub_bd08`):** Die Hi-Score-Tabelle erscheint **bei einem
 wertungswürdigen Schuss mitten im Spiel** (nicht nach dem Match): bei Schussbeginn wird
@@ -832,6 +837,6 @@ Alle Haupt-Screens sind **pixelgenau** gegen DOSBox-Captures des Originals abgeg
 | **Kommandozeile/Usage** (`sub_1459`/`sub_15d8`) | `-D/-F/-M/-?`-Schalter, stdout-Hilfe | **weggelassen** — für den Browser gegenstandslos — `—` |
 | **Zweiter Quit-Dialog** (`sub_8ac5`, Ganzprogramm-Ende) | separater Beenden-Dialog | **weggelassen** — kein Programm-Ende im Browser — `—` |
 | In-Engine-Info-Popups (`sub_95a0`) | geboxte Textschirme | durch den HTML-Startschirm/Doku-Viewer ersetzt — `≈` |
-| **Maus-Positionierung** (`MouseGlideTo`/`MouseToMenuItem`) | verschiebt den echten Maustreiber-Cursor | **angenähert** — Browser kann den OS-Cursor nicht setzen; stattdessen **relatives Delta-Tracking** (Warp bleibt stehen, Bewegung setzt dort fort). Das **Confinement** `MouseSetRange(3,3,633,52)` ist damit **1:1 umgesetzt** — `≈` |
+| **Maus-Positionierung** (`MouseGlideTo`/`MouseToMenuItem`) | verschiebt den echten Maustreiber-Cursor | **angenähert** — Browser kann den OS-Cursor nicht setzen; die Maus wird daher **per Pointer-Lock-API eingefangen** (unbegrenzte relative Bewegung; Esc/Dialoge geben frei, der nächste Klick fängt wieder ein), Warps bewegen den eingefangenen Software-Cursor. Das **Confinement** `MouseSetRange(3,3,633,52)` ist damit **1:1** — `≈` |
 | **CR-Inducer-Icons** (`sub_2b8c`, Randomize=1) | bei **jedem** Strip-Redraw über den Spiel-RNG neu gewürfeltes Gekritzel | **angenähert** — pro Zug/Waffenwahl stabil (eigener LCG), da unsere HUD auch bei Mausbewegung neu zeichnet (würde sonst flackern) und der Spiel-RNG unangetastet bleibt — `≈` |
 | **Animations-Tempi ohne Original-Taktung** (Terrain-Nachrutschen `sub_625d`, Erdbeben-Risse, Post-Schuss-Fall) | im Original **ungetaktet** (CPU-gebunden → hängt von der DOSBox-cycles-Einstellung ab) | **bewusste Rate** gewählt, da es keine feste Original-Referenz gibt — `≈` |

@@ -785,6 +785,25 @@ function cursorByDelta(e, x0 = 3, y0 = 3, x1 = 636, y1 = 476) {
   cursor.y = Math.round(Math.max(y0, Math.min(y1, cursor.y + (e.movementY || 0) / r.height * 480)));
   cursor.show = true;
 }
+
+// --- Pointer Lock: on the mouse-driven screens we CAPTURE the mouse so its relative motion
+// (movementX/Y) is UNBOUNDED — otherwise the real OS pointer can hit a screen edge and the
+// in-game cursor freezes. This mirrors the DOS mouse driver, which owned a single captured
+// cursor. Esc / Tab / a tab-switch releases the lock; the next click re-captures. The lock
+// engages only on the mouse-driven screens, never during flight/animation/dialogs.
+let pointerLocked = false;
+document.addEventListener('pointerlockchange', () => { pointerLocked = document.pointerLockElement === canvas; });
+document.addEventListener('pointerlockerror', () => {});
+function wantsCursor() {
+  if (state === S.MENU || state === S.NAMES || state === S.SHOP) return true;
+  const p = game.players[game.current];
+  return state === S.AIM && p && !p.isComputer;
+}
+function maybeLock() {                            // call from a click (user gesture required)
+  if (wantsCursor() && !pointerLocked && canvas.requestPointerLock) {
+    try { canvas.requestPointerLock(); } catch (e) {}
+  }
+}
 addEventListener('mousemove', (e) => {
   if (overlay.style.display !== 'none') return;
   const g = canvasToGame(e);
@@ -802,10 +821,7 @@ addEventListener('mousemove', (e) => {
   if (state === S.AIM && game.players[game.current] && !game.players[game.current].isComputer) {
     kbSelect = false;
     if (game.mousePanel) {
-      // panel mode: CONFINED to the HUD strip (MouseSetRange(3,3,633,52)). Like the DOS
-      // mouse driver, we track RELATIVE motion (movementX/Y): the panel cursor responds
-      // immediately no matter where the invisible real pointer sits — a browser page
-      // cannot reposition the OS cursor, so deltas are the faithful substitute.
+      // panel mode: CONFINED to the HUD strip (MouseSetRange(3,3,633,52)); relative motion.
       const r = canvas.getBoundingClientRect();
       const c = clampToPanel({
         x: cursor.x + (e.movementX || 0) / r.width * 640,
@@ -813,9 +829,9 @@ addEventListener('mousemove', (e) => {
       });
       cursor.x = Math.round(c.x); cursor.y = Math.round(c.y);
     } else {
-      // keyboard mode: free-roaming cursor over the whole field — click picks the shot
-      // direction (and fires); the cursor follows the real mouse absolutely.
-      cursor.x = g.x; cursor.y = g.y;
+      // free-roaming cursor over the whole field (relative → unbounded under pointer lock);
+      // a click picks the shot direction and fires.
+      cursorByDelta(e);
     }
     cursor.show = true;
     redrawAim();
@@ -837,11 +853,13 @@ addEventListener('mousedown', (e) => {
   if (overlay.style.display !== 'none') return;   // start overlay handles its own click
   const rightBtn = e.button === 2;
   if (state === S.ROUNDINTRO) { introFast = true; return; }   // any click speeds up the fly-in
-  // On the menu-like screens the visible cursor is delta-tracked (see cursorByDelta), so a
-  // click must act at the SOFTWARE cursor, not the raw OS-pointer position (which is out of
-  // sync after a warp). AIM handles its own cursor/coords inside onAimClick.
-  const g = (state === S.MENU || state === S.NAMES || state === S.SHOP)
-    ? { x: cursor.x, y: cursor.y } : canvasToGame(e);
+  // Pointer Lock: capture the mouse on the cursor-driven screens (unbounded relative motion);
+  // release it on non-game screens so the OS cursor returns.
+  if (wantsCursor()) maybeLock();
+  else if (pointerLocked) { try { document.exitPointerLock(); } catch (e) {} }
+  // On the cursor-driven screens the click acts at the SOFTWARE cursor position (the OS
+  // pointer is captured/hidden and its raw coords are meaningless under lock).
+  const g = wantsCursor() ? { x: cursor.x, y: cursor.y } : canvasToGame(e);
   if (state === S.MENU) {
     if (popup) {                                        // popup captures all menu clicks
       const b = popup.def.btn, [wx1, wy1, wx2, wy2] = popup.def.win;
