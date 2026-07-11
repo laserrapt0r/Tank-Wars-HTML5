@@ -5596,10 +5596,12 @@ addEventListener('mousedown', (e) => {
   if (overlay.style.display !== 'none') return;   // start overlay handles its own click
   const rightBtn = e.button === 2;
   if (state === S.ROUNDINTRO) { introFast = true; return; }   // any click speeds up the fly-in
-  // Pointer Lock: capture the mouse on the cursor-driven screens (unbounded relative motion);
-  // release it on non-game screens so the OS cursor returns.
+  // Pointer Lock: capture the mouse on the cursor-driven screens (unbounded relative motion).
+  // Do NOT release it here on the transient in-game screens (flight / rankings / help / status):
+  // they all lead back to a cursor screen (shop / menu / aim), so releasing on the click that
+  // advances them would drop the capture just as the shop opens. The lock is released only when
+  // leaving the game (beginFarewell) or by the user pressing Esc.
   if (wantsCursor()) maybeLock();
-  else if (pointerLocked) { try { document.exitPointerLock(); } catch (e) {} }
   // On the cursor-driven screens the click acts at the SOFTWARE cursor position (the OS
   // pointer is captured/hidden and its raw coords are meaningless under lock).
   const g = wantsCursor() ? { x: cursor.x, y: cursor.y } : canvasToGame(e);
