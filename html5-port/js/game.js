@@ -432,7 +432,7 @@ class Game {
   reapDead() {
     const dead = [];
     for (const t of this.players) {
-      if (t.alive && t.crew <= 0) { t.alive = false; dead.push({ x: t.x, y: t.y, angle: t.angle, colorIndex: t.colorIndex }); }
+      if (t.alive && t.crew <= 0) { t.alive = false; dead.push({ x: t.x, y: t.y, angle: t.angle, colorIndex: t.colorIndex, name: t.name }); }
     }
     return dead;
   }
@@ -479,6 +479,10 @@ class Game {
     // then erases it and restores the tank's real colour. Tanks die one after another.
     if (a.kind === 'death') {
       const d = a.queue[a.di];
+      // The original switches the HUD name box to the DYING tank during the flash: its name is
+      // drawn in this tank's colour index, so the palette cycle below makes the name blink
+      // (fade up to white) and then fade out — see drawStatusBar's use of _dyingHud.
+      this._dyingHud = { name: d.name, colorIndex: d.colorIndex };
       const PH = 260;                                     // ms per phase (A/B/C); ~0.9s/tank
       if (!a.soundPlayed) {                               // rising tones + end sweep, once/tank
         this.dyingTanks.push(d);
@@ -504,7 +508,7 @@ class Game {
         this.dyingTanks.pop();
         this.vga.palette[ci] = GAME_PALETTE[ci].slice(); this.vga._syncPalette();
         a.di++; a.t = 0; a.soundPlayed = false;
-        if (a.di >= a.queue.length) { this.drawScene(); return true; }
+        if (a.di >= a.queue.length) { this._dyingHud = null; this.drawScene(); return true; }
         this.drawScene();
         return false;
       }
@@ -623,7 +627,7 @@ class Game {
       a.ti++; a.started = false;
       if (t.alive && t.crew <= 0) {
         t.alive = false;
-        const death = { kind: 'death', queue: [{ x: t.x, y: t.y, angle: t.angle, colorIndex: t.colorIndex }], di: 0, t: 0, soundPlayed: false };
+        const death = { kind: 'death', queue: [{ x: t.x, y: t.y, angle: t.angle, colorIndex: t.colorIndex, name: t.name }], di: 0, t: 0, soundPlayed: false };
         if (a.ti < a.tanks.length) this.phases.unshift(a);   // resume the remaining falls after…
         this.phases.unshift(death);                          // …flashing this tank first
         return true;

@@ -152,14 +152,17 @@ function drawStatusBar(vga, game) {
   vga.bar(0, 0, vga.W - 1, 58, COL.SKY);
   frame3DThick(vga, 0, 0, 639, 58, true);
 
-  const panelOn = game.mousePanel && !p.isComputer;
+  // during a tank's death flash the HUD name box switches to the DYING tank (sub_6895): its
+  // name rides that tank's palette index, so it blinks (fade up to white) then fades out.
+  const dying = game._dyingHud;                        // {name, colorIndex} or null
+  const panelOn = game.mousePanel && !p.isComputer && !dying;
   game._panel = null;
   if (panelOn) {
     drawAimPanel(vga, game, p);                        // sub_557a replaces both left boxes
   } else {
-    // name box
+    // name box (the dying tank during a death flash, else the current player)
     frame3D(vga, 6, 6, 250, 28, true);
-    vga.outText(10, 9, p.name, 2, p.colorIndex);
+    vga.outText(10, 9, dying ? dying.name : p.name, 2, dying ? dying.colorIndex : p.colorIndex);
 
     // weapon box (2nd row, left): count navy + name white (plural-s), or "No Mun no Fun !"
     // when the tank owns nothing (sub_4eae @0x4f36).

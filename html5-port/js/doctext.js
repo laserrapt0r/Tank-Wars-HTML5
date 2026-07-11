@@ -522,6 +522,10 @@ its palette index is then cycled through: phase A gray **0→60** (6‑bit) with
 sky color** (16,51,60 ≈ Sky) + a final tone sweep 900→200 Hz; then the tank is
 erased and the palette reset to the real player color. Multiple dead tanks flash
 one after another. Implemented as \`stepAnim\` child \`'death'\` (wall clock, ~0.8 s per tank).
+During the flash the **HUD name box switches to the DYING tank**: its name is drawn in that
+tank's palette index, so it blinks (fades up to white) and then fades out with the tank —
+even when the enemy dies rather than the current player (\`game.js\` \`_dyingHud\` →
+\`hud.js drawStatusBar\`).
 
 **Not bit/pixel exact (deliberate deviations):**
 - **Random seed:** the port uses the **exact Turbo Pascal 7 generator**
@@ -1366,6 +1370,10 @@ sein Paletten‑Index dann durchzyklt: Phase A Grau **0→60** (6‑Bit) mit ste
 Himmelfarbe** (16,51,60 ≈ Sky) + abschließender Ton‑Sweep 900→200 Hz; danach wird der Panzer
 gelöscht und die Palette auf die echte Spielerfarbe zurückgesetzt. Mehrere Tote flashen
 nacheinander. Umgesetzt als \`stepAnim\`‑Kind \`'death'\` (wall‑clock, ~0,8 s je Panzer).
+Während des Flashs **wechselt die HUD‑Namensbox auf den sterbenden Panzer**: dessen Name
+wird in eben diesem Paletten‑Index gezeichnet, also blinkt er (Fade auf Weiß) und fadet dann
+mit dem Panzer aus — auch wenn nicht der aktuelle Spieler, sondern der Gegner stirbt
+(\`game.js\` \`_dyingHud\` → \`hud.js drawStatusBar\`).
 
 **Noch nicht bit‑/pixelgetreu (bewusste Rest‑Abweichungen):**
 - **Zufalls‑Seed:** Der Port nutzt den **exakten Turbo‑Pascal‑7‑Generator**

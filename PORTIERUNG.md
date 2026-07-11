@@ -523,6 +523,10 @@ sein Paletten‑Index dann durchzyklt: Phase A Grau **0→60** (6‑Bit) mit ste
 Himmelfarbe** (16,51,60 ≈ Sky) + abschließender Ton‑Sweep 900→200 Hz; danach wird der Panzer
 gelöscht und die Palette auf die echte Spielerfarbe zurückgesetzt. Mehrere Tote flashen
 nacheinander. Umgesetzt als `stepAnim`‑Kind `'death'` (wall‑clock, ~0,8 s je Panzer).
+Während des Flashs **wechselt die HUD‑Namensbox auf den sterbenden Panzer**: dessen Name
+wird in eben diesem Paletten‑Index gezeichnet, also blinkt er (Fade auf Weiß) und fadet dann
+mit dem Panzer aus — auch wenn nicht der aktuelle Spieler, sondern der Gegner stirbt
+(`game.js` `_dyingHud` → `hud.js drawStatusBar`).
 
 **Noch nicht bit‑/pixelgetreu (bewusste Rest‑Abweichungen):**
 - **Zufalls‑Seed:** Der Port nutzt den **exakten Turbo‑Pascal‑7‑Generator**

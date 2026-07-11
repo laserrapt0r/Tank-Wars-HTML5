@@ -1626,6 +1626,22 @@ overlay.addEventListener('click', () => {
       warpCursor(190, 30);              // MouseGlideTo target — cursor visible on the panel
       redrawAim();
     }
+    else if (shot === 'selfdeath') {   // CURRENT player self-destructs, then step the death flash to frame ?f=
+      game.setupPlayers([{ name: 'TOMMY', isComputer: false }, { name: 'CPU', isComputer: true, personality: 'Ballisto' }]);
+      game.mousePanel = false;
+      game.startRound();
+      game.players.forEach(p => { p.chute = false; if (p.restY) p.y = p.restY; });
+      game.current = 0;
+      const pl = game.players[0]; pl.crew = 1; pl.angle = 90; pl.power = 8; game.wind = 0;
+      game.fire();
+      let s = 0; while (game.projectile && !game.projectile.done && s++ < 6000) game.stepFlight();
+      let res = game.resolveImpact();
+      const target = parseInt(params.get('f') || '45', 10);
+      let f = 0;
+      while (res && res.animating && f < target) { if (game.stepAnim(16)) break; f++; }
+      vga.present();
+      document.title = 'death f=' + f + ' crew=' + pl.crew + ' alive=' + pl.alive;
+    }
   } catch (err) {
     document.title = 'ERR: ' + err.message; console.error(err);
     try {   // paint the error into the canvas so headless screenshots show it

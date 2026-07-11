@@ -1941,14 +1941,17 @@ function drawStatusBar(vga, game) {
   vga.bar(0, 0, vga.W - 1, 58, COL.SKY);
   frame3DThick(vga, 0, 0, 639, 58, true);
 
-  const panelOn = game.mousePanel && !p.isComputer;
+  // during a tank's death flash the HUD name box switches to the DYING tank (sub_6895): its
+  // name rides that tank's palette index, so it blinks (fade up to white) then fades out.
+  const dying = game._dyingHud;                        // {name, colorIndex} or null
+  const panelOn = game.mousePanel && !p.isComputer && !dying;
   game._panel = null;
   if (panelOn) {
     drawAimPanel(vga, game, p);                        // sub_557a replaces both left boxes
   } else {
-    // name box
+    // name box (the dying tank during a death flash, else the current player)
     frame3D(vga, 6, 6, 250, 28, true);
-    vga.outText(10, 9, p.name, 2, p.colorIndex);
+    vga.outText(10, 9, dying ? dying.name : p.name, 2, dying ? dying.colorIndex : p.colorIndex);
 
     // weapon box (2nd row, left): count navy + name white (plural-s), or "No Mun no Fun !"
     // when the tank owns nothing (sub_4eae @0x4f36).
@@ -2656,6 +2659,10 @@ its palette index is then cycled through: phase A gray **0→60** (6‑bit) with
 sky color** (16,51,60 ≈ Sky) + a final tone sweep 900→200 Hz; then the tank is
 erased and the palette reset to the real player color. Multiple dead tanks flash
 one after another. Implemented as \`stepAnim\` child \`'death'\` (wall clock, ~0.8 s per tank).
+During the flash the **HUD name box switches to the DYING tank**: its name is drawn in that
+tank's palette index, so it blinks (fades up to white) and then fades out with the tank —
+even when the enemy dies rather than the current player (\`game.js\` \`_dyingHud\` →
+\`hud.js drawStatusBar\`).
 
 **Not bit/pixel exact (deliberate deviations):**
 - **Random seed:** the port uses the **exact Turbo Pascal 7 generator**
@@ -3500,6 +3507,10 @@ sein Paletten‑Index dann durchzyklt: Phase A Grau **0→60** (6‑Bit) mit ste
 Himmelfarbe** (16,51,60 ≈ Sky) + abschließender Ton‑Sweep 900→200 Hz; danach wird der Panzer
 gelöscht und die Palette auf die echte Spielerfarbe zurückgesetzt. Mehrere Tote flashen
 nacheinander. Umgesetzt als \`stepAnim\`‑Kind \`'death'\` (wall‑clock, ~0,8 s je Panzer).
+Während des Flashs **wechselt die HUD‑Namensbox auf den sterbenden Panzer**: dessen Name
+wird in eben diesem Paletten‑Index gezeichnet, also blinkt er (Fade auf Weiß) und fadet dann
+mit dem Panzer aus — auch wenn nicht der aktuelle Spieler, sondern der Gegner stirbt
+(\`game.js\` \`_dyingHud\` → \`hud.js drawStatusBar\`).
 
 **Noch nicht bit‑/pixelgetreu (bewusste Rest‑Abweichungen):**
 - **Zufalls‑Seed:** Der Port nutzt den **exakten Turbo‑Pascal‑7‑Generator**
@@ -4265,7 +4276,7 @@ class Game {
   reapDead() {
     const dead = [];
     for (const t of this.players) {
-      if (t.alive && t.crew <= 0) { t.alive = false; dead.push({ x: t.x, y: t.y, angle: t.angle, colorIndex: t.colorIndex }); }
+      if (t.alive && t.crew <= 0) { t.alive = false; dead.push({ x: t.x, y: t.y, angle: t.angle, colorIndex: t.colorIndex, name: t.name }); }
     }
     return dead;
   }
@@ -4312,6 +4323,10 @@ class Game {
     // then erases it and restores the tank's real colour. Tanks die one after another.
     if (a.kind === 'death') {
       const d = a.queue[a.di];
+      // The original switches the HUD name box to the DYING tank during the flash: its name is
+      // drawn in this tank's colour index, so the palette cycle below makes the name blink
+      // (fade up to white) and then fade out — see drawStatusBar's use of _dyingHud.
+      this._dyingHud = { name: d.name, colorIndex: d.colorIndex };
       const PH = 260;                                     // ms per phase (A/B/C); ~0.9s/tank
       if (!a.soundPlayed) {                               // rising tones + end sweep, once/tank
         this.dyingTanks.push(d);
@@ -4337,7 +4352,7 @@ class Game {
         this.dyingTanks.pop();
         this.vga.palette[ci] = GAME_PALETTE[ci].slice(); this.vga._syncPalette();
         a.di++; a.t = 0; a.soundPlayed = false;
-        if (a.di >= a.queue.length) { this.drawScene(); return true; }
+        if (a.di >= a.queue.length) { this._dyingHud = null; this.drawScene(); return true; }
         this.drawScene();
         return false;
       }
@@ -4456,7 +4471,7 @@ class Game {
       a.ti++; a.started = false;
       if (t.alive && t.crew <= 0) {
         t.alive = false;
-        const death = { kind: 'death', queue: [{ x: t.x, y: t.y, angle: t.angle, colorIndex: t.colorIndex }], di: 0, t: 0, soundPlayed: false };
+        const death = { kind: 'death', queue: [{ x: t.x, y: t.y, angle: t.angle, colorIndex: t.colorIndex, name: t.name }], di: 0, t: 0, soundPlayed: false };
         if (a.ti < a.tanks.length) this.phases.unshift(a);   // resume the remaining falls after…
         this.phases.unshift(death);                          // …flashing this tank first
         return true;
@@ -6276,6 +6291,22 @@ overlay.addEventListener('click', () => {
       state = S.AIM;
       warpCursor(190, 30);              // MouseGlideTo target — cursor visible on the panel
       redrawAim();
+    }
+    else if (shot === 'selfdeath') {   // CURRENT player self-destructs, then step the death flash to frame ?f=
+      game.setupPlayers([{ name: 'TOMMY', isComputer: false }, { name: 'CPU', isComputer: true, personality: 'Ballisto' }]);
+      game.mousePanel = false;
+      game.startRound();
+      game.players.forEach(p => { p.chute = false; if (p.restY) p.y = p.restY; });
+      game.current = 0;
+      const pl = game.players[0]; pl.crew = 1; pl.angle = 90; pl.power = 8; game.wind = 0;
+      game.fire();
+      let s = 0; while (game.projectile && !game.projectile.done && s++ < 6000) game.stepFlight();
+      let res = game.resolveImpact();
+      const target = parseInt(params.get('f') || '45', 10);
+      let f = 0;
+      while (res && res.animating && f < target) { if (game.stepAnim(16)) break; f++; }
+      vga.present();
+      document.title = 'death f=' + f + ' crew=' + pl.crew + ' alive=' + pl.alive;
     }
   } catch (err) {
     document.title = 'ERR: ' + err.message; console.error(err);
