@@ -709,13 +709,14 @@ Ebenfalls 1:1 umgesetzt:
   Status"**-Anzeige (`sub_907f`: Game N of M / Attempt / Error Rate, Zug-Reihenfolge, tote
   durchgestrichen) — `main.js`.
 - **`A`-Gag-Screen** (`sub_95a0`): bg-Banner mit Rahmen, rotem Größe-2-Titel „TankWars V2.07"
-  (212,12) und weißer Zeile „They will take control.  1995 ML" (205,40) + Marker; im Zug per
-  `A` abrufbar, mit beliebiger Taste schließbar — `main.js`.
+  (212,12) und weißer Zeile „They will take control.  ©1995 ML" (205,40); das ©-Zeichen
+  stammt aus dem Font-Glyph 169 (Original: `DrawMarker`-Ring). Im Zug per `A` abrufbar,
+  schließt nach ~2 s von selbst (oder per beliebiger Taste) — `main.js`.
 - **Abschieds-Screen** (`sub_116c`): Text-Modus-Schreibmaschinen-Monolog (gelb/grau/weiß auf
   schwarz, 200-Hz-Klick je Zeichen, Spielzeit „You played …", ein von vier Kommentaren nach
   Spielminuten, WWW/E-Mail); byte-exakte Texte, Tastendruck läuft schneller — `main.js`.
-  Abrufbar per **Esc im Hauptmenü**; kehrt danach ins Menü zurück (Browser hat kein
-  Programm-Ende).
+  Abrufbar per **Esc im Hauptmenü**; bleibt danach stehen, bis die Seite neu geladen wird
+  (Browser hat kein Programm-Ende).
 - **Highscores „The Lucky Shots"** (`sub_96f4`) mit **`localStorage`-Persistenz** und
   'L'-Taste (in-game) — `main.js`; erscheint bei einem wertungswürdigen Schuss,
   **nicht** nach dem Match.
@@ -840,7 +841,7 @@ Alle Haupt-Screens sind **pixelgenau** gegen DOSBox-Captures des Originals abgeg
 ### Bewusst **nicht** 1:1 (bewusst weggelassen / angenähert)
 | Bereich | Original | Port‑Stand |
 |---|---|---|
-| **Abschieds-Screen** (`sub_116c`) | Schreibmaschinen-Monolog beim **Programm-Ende** | **umgesetzt**, aber per **Esc im Hauptmenü** abrufbar und danach zurück ins Menü — der Browser hat kein Programm-Ende — `≈` |
+| **Abschieds-Screen** (`sub_116c`) | Schreibmaschinen-Monolog beim **Programm-Ende** | **umgesetzt**, aber per **Esc im Hauptmenü** abrufbar und bleibt danach stehen (Seite neu laden) — der Browser hat kein Programm-Ende — `≈` |
 | **INI-Persistenz** (`sub_1648`/`sub_1a2a`) | Optionen in `Tankwars.ini` speichern/laden | **weggelassen** — Optionen setzen sich pro Laden auf Defaults zurück (ließe sich per `localStorage` nachrüsten) — `—` |
 | **Kommandozeile/Usage** (`sub_1459`/`sub_15d8`) | `-D/-F/-M/-?`-Schalter, stdout-Hilfe | **weggelassen** — für den Browser gegenstandslos — `—` |
 | **Zweiter Quit-Dialog** (`sub_8ac5`, Ganzprogramm-Ende) | separater Beenden-Dialog | **weggelassen** — kein Programm-Ende im Browser — `—` |

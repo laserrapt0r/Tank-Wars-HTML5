@@ -704,12 +704,13 @@ The following are rebuilt **1:1**:
   Status"** (`sub_907f`: Game N of M / Attempt / Error Rate, turn order, dead struck
   through) — `main.js`.
 - **`A` gag screen** (`sub_95a0`): a framed bg banner with a red size-2 title "TankWars
-  V2.07" (212,12) and a white line "They will take control.  1995 ML" (205,40) + marker;
-  reachable in-game via `A`, dismissed by any key — `main.js`.
+  V2.07" (212,12) and a white line "They will take control.  ©1995 ML" (205,40); the ©
+  glyph comes from font glyph 169 (original: a `DrawMarker` ring). Reachable in-game via
+  `A`, auto-dismisses after ~2 s (or on any key) — `main.js`.
 - **Farewell screen** (`sub_116c`): a text-mode typewriter monologue (yellow/gray/white on
   black, a 200 Hz click per character, the play-time "You played …", one of four comments by
   minutes played, WWW/e-mail); byte-exact text, any key fast-forwards — `main.js`. Reachable
-  via **Esc in the main menu**; returns to the menu afterwards (a browser has no program exit).
+  via **Esc in the main menu**; stays until the page is reloaded (a browser has no program exit).
 - **High scores "The Lucky Shots"** (`sub_96f4`) with **`localStorage` persistence** and the
   'L' key (in-game) — `main.js`.
 - **Rankings after every game** (`sub_abdc`): "Rankings after N of M Games", the encouraging
@@ -830,7 +831,7 @@ All main screens match **pixel-for-pixel** against DOSBox captures of the origin
 ### Deliberately **not** 1:1 (omitted / approximated)
 | Area | Original | Port state |
 |---|---|---|
-| **Farewell screen** (`sub_116c`) | typewriter monologue on **program exit** | **implemented**, but reachable via **Esc in the main menu** and returns to the menu afterwards — a browser has no program exit — `≈` |
+| **Farewell screen** (`sub_116c`) | typewriter monologue on **program exit** | **implemented**, but reachable via **Esc in the main menu** and stays until the page is reloaded — a browser has no program exit — `≈` |
 | **INI persistence** (`sub_1648`/`sub_1a2a`) | save/load options in `Tankwars.ini` | **omitted** — options reset to defaults each load (could be added via `localStorage`) — `—` |
 | **Command line/usage** (`sub_1459`/`sub_15d8`) | `-D/-F/-M/-?` switches, stdout help | **omitted** — meaningless for a browser build — `—` |
 | **Second quit dialog** (`sub_8ac5`, whole-program exit) | separate exit dialog | **omitted** — no program exit in a browser — `—` |

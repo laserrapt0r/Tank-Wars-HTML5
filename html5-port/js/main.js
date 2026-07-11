@@ -64,6 +64,7 @@ let nameSetup = null;
 let shop = null;
 let farewell = null;   // active shareware farewell screen (sub_116c), set on Esc-in-menu
 let _startMs = Date.now();   // program-start timestamp, for the farewell's "You played N…"
+let infoTimer = 0;           // 'A' info screen auto-dismiss countdown (sub_95a0: ~200 cs = 2 s)
 
 // impact pause timer
 let impactTimer = 0;
@@ -620,7 +621,7 @@ function drawInfoScreen() {
   frame3D(vga, 6, 6, 633, 52, false);                      // Frame3D(6,6,633,52, style 0)
   vga.outText(212, 12, 'TankWars V2.07', 2, COL.NUKE_RED); // size 2, red(12), @ (212,12)
   vga.outText(205, 40, '    They will take control.                  1995 ML', 1, 15);
-  vga.bar(555, 40, 556, 41, 15);                           // DrawMarker(555,40,15)
+  vga.outText(555, 40, '\xa9', 1, 15);                     // © — DrawMarker(555,40,15): small ring
   vga.present();
 }
 
@@ -680,7 +681,7 @@ function beginFarewell() {
   vga.present();
 }
 function stepFarewell(dt) {
-  const f = farewell; if (!f) return;
+  const f = farewell; if (!f || f.done) return;        // once finished, the screen stays (until reload)
   if (f.caret) { vga.bar(f.caret.x, f.caret.y, f.caret.x + 7, f.caret.y + 13, 0); f.caret = null; }
   f.acc += dt;
   while (f.i < f.ops.length) {
@@ -693,9 +694,9 @@ function stepFarewell(dt) {
   if (f.i < f.ops.length) {                        // block caret at the next cell
     const x = FW.x0 + f.col * FW.cw, y = FW.y0 + f.row * FW.lh;
     vga.bar(x, y, x + 7, y + 13, 15); f.caret = { x, y };
-  } else if ((f.endAcc += dt) >= 1000) {           // done → 1 s pause → main menu (no OS exit)
-    farewell = null; state = S.MENU; drawMenu(); return;
-  }
+  } else {
+    f.done = true;                                 // typing finished — the text stays on screen
+  }                                                // (browser has no program exit; reload to leave)
   vga.present();
 }
 function drawQuit() {
@@ -1237,7 +1238,7 @@ function onAimKey(e) {
     case 'Enter':      if (game.fire()) { state = S.FLIGHT; } handled = true; break;
     case ' ':          prevState = S.AIM; state = S.STATUS; drawStatus(); return;
     case 'l': case 'L': beginHighScores('peek'); return;   // in-game "Lucky Shots" peek (0xdebd)
-    case 'a': case 'A': prevState = S.AIM; state = S.INFO; drawInfoScreen(); return;   // gag screen (sub_95a0)
+    case 'a': case 'A': prevState = S.AIM; state = S.INFO; infoTimer = 0; drawInfoScreen(); return;   // gag screen (sub_95a0)
     case '1': case '2': case '3': case '4': case '5':
     case '6': case '7': case '8': case '9': case '0': {    // 1..0 = peek at player N's status (sub_3d21)
       const d = e.key === '0' ? 10 : (e.key.charCodeAt(0) - 48);
@@ -1334,6 +1335,10 @@ function loop(ts) {
       if (game.stepAnim(dt)) afterImpact(game.finishAnim());
     } else if (state === S.FAREWELL) {
       stepFarewell(dt);                 // typewriter monologue on "quit"
+    } else if (state === S.INFO) {
+      // 'A' gag screen auto-dismisses after ~2 s (sub_95a0: ~200 centiseconds) or on a key.
+      infoTimer += dt;
+      if (infoTimer >= 2000) { state = prevState; game.drawScene(); }
     }
   } catch (err) {
     console.error('game loop error:', err);
