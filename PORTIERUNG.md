@@ -525,8 +525,9 @@ gelöscht und die Palette auf die echte Spielerfarbe zurückgesetzt. Mehrere Tot
 nacheinander. Umgesetzt als `stepAnim`‑Kind `'death'` (wall‑clock, ~0,8 s je Panzer).
 Während des Flashs **wechselt die HUD‑Namensbox auf den sterbenden Panzer**: dessen Name
 wird in eben diesem Paletten‑Index gezeichnet, also blinkt er (Fade auf Weiß) und fadet dann
-mit dem Panzer aus — auch wenn nicht der aktuelle Spieler, sondern der Gegner stirbt
-(`game.js` `_dyingHud` → `hud.js drawStatusBar`).
+mit dem Panzer aus — auch wenn nicht der aktuelle Spieler, sondern der Gegner stirbt. Nach dem
+Ausfaden bleibt die Box **leer** (der Name springt **nicht** auf den Schützen zurück), bis der
+nächste Zug/Screen sie neu zeichnet (`game.js` `_dyingHud` → `hud.js drawStatusBar`).
 
 **Noch nicht bit‑/pixelgetreu (bewusste Rest‑Abweichungen):**
 - **Zufalls‑Seed:** Der Port nutzt den **exakten Turbo‑Pascal‑7‑Generator**

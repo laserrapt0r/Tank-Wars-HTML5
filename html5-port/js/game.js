@@ -167,6 +167,7 @@ class Game {
     }
     this._introAcc = 0;                 // reset the wall-clock descent accumulator
     this.dyingTanks = [];               // active death-flash tanks (sub_6895)
+    this._dyingHud = null;              // HUD name-fade override (set during a death flash)
 
     // Turn order — a RANDOM PERMUTATION of the players, DECOMPILED 1:1 from sub_da0c
     // (0xda43..0xdad3): slot 1 = RandomN(N)+1, each further slot re-rolled until it is not
@@ -508,7 +509,10 @@ class Game {
         this.dyingTanks.pop();
         this.vga.palette[ci] = GAME_PALETTE[ci].slice(); this.vga._syncPalette();
         a.di++; a.t = 0; a.soundPlayed = false;
-        if (a.di >= a.queue.length) { this._dyingHud = null; this.drawScene(); return true; }
+        // fully faded out: keep the name box EMPTY (the dead name is gone, drawn in the sky
+        // colour) through the post-death pause — the original does NOT flash the shooter's
+        // name back here. Cleared at the next real HUD draw (endTurn / finishRound / startRound).
+        if (a.di >= a.queue.length) { this._dyingHud = { name: d.name, colorIndex: d.colorIndex, faded: true }; this.drawScene(); return true; }
         this.drawScene();
         return false;
       }

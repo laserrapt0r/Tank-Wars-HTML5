@@ -160,9 +160,12 @@ function drawStatusBar(vga, game) {
   if (panelOn) {
     drawAimPanel(vga, game, p);                        // sub_557a replaces both left boxes
   } else {
-    // name box (the dying tank during a death flash, else the current player)
+    // name box (the dying tank during a death flash, else the current player). Once the flash
+    // has fully faded (dying.faded), draw the dead name in the sky colour so it stays gone
+    // through the post-death pause instead of flashing the shooter's name back.
     frame3D(vga, 6, 6, 250, 28, true);
-    vga.outText(10, 9, dying ? dying.name : p.name, 2, dying ? dying.colorIndex : p.colorIndex);
+    vga.outText(10, 9, dying ? dying.name : p.name, 2,
+      dying ? (dying.faded ? COL.SKY : dying.colorIndex) : p.colorIndex);
 
     // weapon box (2nd row, left): count navy + name white (plural-s), or "No Mun no Fun !"
     // when the tank owns nothing (sub_4eae @0x4f36).

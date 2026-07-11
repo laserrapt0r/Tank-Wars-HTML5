@@ -341,6 +341,7 @@ function aimRingThenFire() {
 }
 
 function endTurn() {
+  game._dyingHud = null;                 // the post-death name fade is over; back to live HUD
   if (game.aliveCount() <= 1) { finishRound(); return; }
   game.nextPlayer();
   state = S.AIM;
@@ -353,6 +354,7 @@ function endTurn() {
 }
 
 function finishRound() {
+  game._dyingHud = null;
   game.endRoundScoring();
   // (No end-of-round tally sound in the original — those tones play at ROUND START, see
   // game.js stepRoundIntro / SND.roundPlace.) Rankings are shown after EVERY game (sub_abdc),
@@ -1552,11 +1554,13 @@ overlay.addEventListener('click', () => {
         dir: { x: 1, y: 1 }, impact: { x: q.x, y: q.y - 2 } };
       p.inventory[3] = 1; p.weapon = 3;
       game.resolveImpact();
-      // run through the crater anim; stop partway into the death flash (white peak)
+      // run through the crater anim; stop partway into the death flash (white peak), or run
+      // fully to completion with ?post=1 to inspect the post-fade HUD (name must NOT revert)
+      const post = params.get('post');
       let guard = 0;
       while (game.anim && guard++ < 20000) {
-        if (game.anim.kind === 'death' && game.anim.t >= 220) break;   // ~end of phase A (white)
-        game.stepAnim(30);
+        if (!post && game.anim.kind === 'death' && game.anim.t >= 220) break;   // ~end of phase A (white)
+        if (game.stepAnim(30)) break;
       }
     }
     else if (shot === 'shop') {
